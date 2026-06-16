@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Birthday Sayang</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CSS RESET & VARIABLES --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-color: #0b0c10;
+            --text-main: #c5c6c7;
+            --accent-glow: #66fcf1;
+            --heart-glow: #ff4b82;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at center, #1f2833 0%, var(--bg-color) 100%);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .romantic-text { 
+            font-family: 'Dancing Script', cursive; 
+            font-size: 2.2rem; 
+            color: #fff; 
+            text-shadow: 0 0 10px rgba(255,255,255,0.5); 
+        }
+
+        /* --- STARS BACKGROUND --- */
+        .stars { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .star { position: absolute; background: white; border-radius: 50%; animation: twinkle infinite ease-in-out; }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); box-shadow: 0 0 8px white; }
+        }
+
+        /* --- FLOATING MUSIC CONTROL --- */
+        .music-btn {
+            position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%;
+            background: rgba(11, 12, 16, 0.8); border: 1px solid var(--accent-glow);
+            color: var(--accent-glow); font-size: 1.2rem; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; z-index: 200; box-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+            transition: all 0.3s ease;
+        }
+        .music-btn.playing {
+            animation: spin 3s linear infinite; border-color: var(--heart-glow);
+            color: var(--heart-glow); box-shadow: 0 0 10px rgba(255, 75, 130, 0.4);
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* --- PAGE CONTAINER --- */
+        #app { position: relative; width: 100%; height: 100%; z-index: 1; }
+        .page {
+            position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: opacity 1s ease-in-out; text-align: center; padding: 20px;
+        }
+        .page.active { opacity: 1; pointer-events: auto; z-index: 10; }
+
+        /* --- BUTTON STYLE --- */
+        .btn {
+            background: var(--glass-bg); border: 1px solid var(--accent-glow); color: var(--accent-glow);
+            padding: 12px 30px; border-radius: 30px; font-family: 'Poppins', sans-serif; font-weight: 600;
+            letter-spacing: 1px; cursor: pointer; transition: all 0.3s; backdrop-filter: blur(5px);
+            margin-top: 25px; box-shadow: 0 0 15px rgba(102, 252, 241, 0.2);
+            position: relative; z-index: 50;
+        }
+        .btn:hover { background: var(--accent-glow); color: var(--bg-color); box-shadow: 0 0 25px var(--accent-glow); }
+
+        /* --- ANIMASI TEKS HALAMAN 1 --- */
+        .fade-in-up { opacity: 0; transform: translateY(20px); animation: fadeInUp 1.5s forwards; }
+        .delay-1 { animation-delay: 0.5s; }
+        .delay-2 { animation-delay: 1.2s; }
+        .delay-3 { animation-delay: 2.2s; }
+        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* --- HALAMAN 2: FLOATING PHOTOS (NATURAL DISPERSION) --- */
+        .photo-area { position: absolute; width: 100%; height: 100%; top: 0; left: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+        
+        .photo-wrapper {
+            position: absolute;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .photo-wrapper:hover { z-index: 20; }
+        
+        /* Desain Polaroid Proposional */
+        .floating-photo { 
+            width: 95px; height: 115px; 
+            object-fit: cover; 
+            border-radius: 4px; 
+            border: 4px solid #fff; border-bottom-width: 16px; 
+            background-color: #fff;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+            /* Memadukan rotasi acak & skala kedalaman awal */
+            transform: rotate(var(--rot)) scale(var(--base-scale, 1)); 
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s, border-color 0.4s;
+        }
+        
+        /* Hover State: Memaksa membesar lurus sempurna tanpa tabrakan */
+        .photo-wrapper:hover .floating-photo { 
+            transform: rotate(0deg) scale(1.4) !important; 
+            box-shadow: 0 0 20px var(--heart-glow); 
+            border-color: #ffe6eb;
+        }
+
+        @keyframes floatPhotoUp { 
+            0% { transform: translateY(0); opacity: 0; }
+            5% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-145vh); opacity: 0; } 
+        }
+
+        /* --- MODAL PREVIEW FOTO --- */
+        .modal { 
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            opacity: 0; pointer-events: none; transition: opacity 0.4s; z-index: 100; padding: 20px; 
+        }
+        .modal.show { opacity: 1; pointer-events: auto; }
+        
+        .photo-modal-view { display: flex; flex-direction: column; align-items: center; }
+        
+        .photo-modal-view img {
+            width: 280px; max-width: 85vw; height: 350px; object-fit: cover;
+            border: 8px solid #fff; border-bottom-width: 35px; border-radius: 8px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+            transform: scale(0.5) translateY(50px);
+            opacity: 0;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s;
+            background: #fff;
+        }
+        .modal.show .photo-modal-view img { transform: scale(1) translateY(0); opacity: 1; }
+
+        .photo-caption {
+            margin-top: -25px; 
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: #111; 
+            background: #fff;
+            padding: 0 12px 12px 12px;
+            border-radius: 0 0 8px 8px;
+            width: 280px; max-width: 85vw;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: all 0.5s ease 0.4s; 
+            z-index: 2;
+        }
+        .modal.show .photo-caption { opacity: 1; transform: translateY(0); }
+
+        .close-modal-btn {
+            background: transparent; border: 1px solid rgba(255,255,255,0.5); color: #fff;
+            padding: 10px 25px; border-radius: 20px; font-family: 'Poppins'; margin-top: 30px;
+            cursor: pointer; transition: 0.3s;
+        }
+        .close-modal-btn:hover { background: var(--heart-glow); border-color: var(--heart-glow); }
+
+        /* --- HALAMAN 3 & 4 --- */
+        .gift-container { display: flex; flex-direction: column; align-items: center; }
+        .gift-box { font-size: 5rem; cursor: pointer; transition: transform 0.2s; animation: floatGift 3s infinite ease-in-out; filter: drop-shadow(0 0 20px rgba(255,215,0,0.4)); user-select: none; }
+        .gift-box:active { transform: scale(0.9); }
+        @keyframes floatGift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        
+        .promises { margin-top: 20px; min-height: 120px; }
+        .promise-text { opacity: 0; transform: translateY(10px); transition: all 0.5s; margin: 10px 0; font-size: 1.1rem; color: #fff; }
+        .promise-text.show { opacity: 1; transform: translateY(0); }
+        
+        .lantern-area { position: absolute; width: 100%; height: 100%; top: 0; left: 0; overflow: hidden; pointer-events: none; z-index: 2; }
+        .lantern { position: absolute; font-size: 3rem; bottom: -50px; cursor: pointer; pointer-events: auto; transition: transform 0.3s; filter: drop-shadow(0 0 15px #ff7b00); user-select: none; }
+        .lantern:hover { transform: scale(1.2); }
+        @keyframes floatUp { to { transform: translateY(-120vh) rotate(15deg); } }
+
+        /* --- HALAMAN CREDITS & ENDING --- */
+        #pageCredits { background: #000; }
+        .credits-container { width: 100%; height: 100%; overflow: hidden; position: relative; display: flex; justify-content: center; }
+        .credits-text {
+            position: absolute; top: 100%; text-align: center; width: 85%; max-width: 600px;
+            color: #fff; font-size: 1.15rem; line-height: 2.2; font-family: 'Poppins', sans-serif;
+            font-weight: 300; text-shadow: 0 0 10px rgba(255,255,255,0.3); opacity: 0;
+        }
+        /* Diubah menjadi 30s agar bacanya santai */
+        .credits-text.start-scroll { animation: cinematicScroll 30s linear forwards; }
+        @keyframes cinematicScroll {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            97% { opacity: 1; }
+            100% { transform: translateY(-150vh); opacity: 0; }
+        }
+
+        #page5 { background: #000; padding: 0; }
+        canvas { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #finalMessage { position: absolute; z-index: 10; opacity: 0; transition: opacity 2.5s ease-in-out; text-align: center; pointer-events: none; width: 100%; padding: 0 25px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        #finalMessage h1 { font-size: 1.6rem; color: #fff; text-shadow: 0 0 10px #ff4b82, 0 0 20px #ff4b82; margin-bottom: 8px; line-height: 1.3; }
+        #finalMessage p { font-size: 1.1rem; color: #ffd700; font-family: 'Poppins', sans-serif; font-weight: 300; text-shadow: 0 0 10px rgba(255,215,0,0.8); }
+        
+        .modal-content-lantern { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-width: 350px; width: 90%; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop src="Music.mp3"></audio>
+    <button class="music-btn" id="musicBtn" onclick="toggleMusic()">🎵</button>
+    <div class="stars" id="starsBg"></div>
+
+    <div id="app">
+        
+        <section id="page1" class="page active">
+            <div class="intro-text">
+                <h1 class="romantic-text" style="font-size: 3.5rem; margin-bottom: 5px;">Happy Birthday</h1>
+                <h2 class="fade-in-up delay-1" style="font-size: 1.5rem; color: var(--heart-glow); margin-bottom: 25px; font-weight: 600;">Sayangku ❤️</h2>
+                <p class="fade-in-up delay-2" style="max-width: 400px; font-size: 1.05rem; line-height: 1.6; color: #fff;">
+                    Hari ini adalah hari yang paling spesial.<br>Meskipun kita lagi terhalang jarak, aku udah nyiapin sesuatu khusus buat kamu.
+                </p>
+            </div>
+            <button class="btn fade-in-up delay-3" onclick="startEverything()">Lihat kejutannya</button>
+        </section>
+
+        <section id="page2" class="page">
+            <h2 class="romantic-text" style="position: relative; z-index: 10; font-size: 2.8rem; margin-bottom: 5px;">PAP DARI KAMU 📸</h2>
+            <p style="font-size: 0.95rem; margin-bottom: 20px; opacity: 0.8; z-index: 10; position: relative;">(Tap fotonya untuk membuka kenangan)</p>
+            
+            <div class="photo-area" id="photoArea"></div>
+
+            <div class="modal" id="photoModal">
+                <div class="photo-modal-view">
+                    <img id="modalImage" src="" alt="Memory">
+                    <div class="photo-caption" id="photoCaption"></div>
+                    <button class="close-modal-btn" onclick="closePhotoModal()">Tutup Kenangan</button>
+                </div>
+            </div>
+            
+            <button class="btn" id="btnPage2" style="display: none; opacity: 0;" onclick="goToPage(3)">Lanjut Buka Kado</button>
+        </section>
+
+        <section id="page3" class="page">
+            <h2 class="romantic-text" style="margin-bottom: 20px;">Kotak Harapan Aku ke Kamu</h2>
+            <p style="font-size: 0.9rem; margin-bottom: 30px; opacity: 0.7;">(Tap kotaknya untuk membuka isinya)</p>
+            <div class="gift-container">
+                <div class="gift-box" onclick="openGift()">🎁</div>
+                <div class="promises" id="promisesContainer">
+                    <div class="promise-text" id="prom1">✨ Semoga kamu selalu bahagia, sehat, dan dijaga terus di sana ✨</div>
+                    <div class="promise-text" id="prom2">❤️ Semoga kamu nggak pernah merasa sendirian, karena di sini ada aku yang selalu dukung kamu ❤️</div>
+                    <div class="promise-text" id="prom3">💪 Aku berharap kamu selalu kuat dan nggak menyerah kalau lagi ada hari yang berat 💪</div>
+                </div>
+            </div>
+            <button class="btn" id="btnPage3" style="display: none; opacity: 0;" onclick="goToPage(4); initLanterns();">Lanjut Terbang</button>
+        </section>
+
+        <section id="page4" class="page">
+            <h2 class="romantic-text" style="position: relative; z-index: 10; text-shadow: 0 0 10px #000;">Pilih Satu Lentera...</h2>
+            <div class="lantern-area" id="lanternArea"></div>
+            
+            <div class="modal" id="lanternModal">
+                <div class="modal-content-lantern">
+                    <p class="romantic-text" style="font-size: 1.8rem; margin-bottom: 30px;">
+                        "Happy Birthday, My Favorite Person!."
+                    </p>
+                    <button class="btn" onclick="startFinalWaltz()">Tutup Mata & Make a Wish</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="pageCredits" class="page">
+            <div class="credits-text" id="rollingText">
+                <p>Hai sayang... Selamat ulang tahun ya.</p><br>
+                <p>Maaf ya, di hari spesialmu ini,</p>
+                <p>aku belum bisa ada di sampingmu untuk tiup lilin bareng.</p>
+                <p>Kita masih harus merayakan semuanya lewat jarak.</p><br>
+                <p>Tapi aku mau kamu tahu satu hal...</p>
+                <p>Meskipun raga kita terpisah ratusan kilometer,</p>
+                <p>pikiranku selalu penuh tentang kamu.</p>
+                <p>Kamu adalah bagian terbaik dari setiap hariku.</p><br>
+                <p>Makasih banyak ya udah hadir di hidupku,</p>
+                <p>udah selalu kuatin aku lewat senyum dan voice note kamu.</p>
+                <p>Aku beruntung banget bisa milikin kamu.</p><br>
+                <p>Bahagia terus ya di sana, jangan pernah ngerasa sendiri.</p>
+                <p>Aku di sini selalu mendoakan dan menyayangimu.</p><br>
+                <p>I love you so much, now and forever...</p>
+            </div>
+        </section>
+
+        <section id="page5" class="page">
+            <canvas id="fwCanvas"></canvas>
+            <div id="finalMessage">
+                <h1 class="romantic-text">Aku sayang kamu.<br>Sampai bertemu di titik yang sama.</h1>
+                <p><br><span style="font-size: 0.8em; opacity: 0.8;">Tertanda, William</span></p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // --- AUDIO CONTROLS ---
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+
+        function startEverything() {
+            playMusic();   
+            goToPage(2);
+            initPhotos(); 
+        }
+
+        function playMusic() {
+            bgMusic.play().then(() => {
+                musicBtn.classList.add('playing');
+                musicBtn.innerHTML = '🎵';
+            }).catch(err => {
+                console.log("Pemutaran tertunda oleh browser.");
+            });
+        }
+
+        function toggleMusic() {
+            if (bgMusic.paused) {
+                bgMusic.play();
+                musicBtn.classList.add('playing');
+                musicBtn.innerHTML = '🎵';
+            } else {
+                bgMusic.pause();
+                musicBtn.classList.remove('playing');
+                musicBtn.innerHTML = '🔇';
+            }
+        }
+
+        document.addEventListener('click', function() {
+            if (bgMusic.paused && !musicBtn.classList.contains('manually-paused')) { playMusic(); }
+        }, { once: true });
+
+        musicBtn.addEventListener('click', function(e) {
+            e.stopPropagation(); 
+            if (bgMusic.paused) { musicBtn.classList.remove('manually-paused'); } 
+            else { musicBtn.classList.add('manually-paused'); }
+        });
+
+        // --- BACKGROUND STARS ---
+        const starsContainer = document.getElementById('starsBg');
+        for (let i = 0; i < 50; i++) {
+            let star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = Math.random() * 3 + 'px';
+            star.style.height = star.style.width;
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.top = Math.random() * 100 + 'vh';
+            star.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            star.style.animationDelay = Math.random() * 2 + 's';
+            starsContainer.appendChild(star);
+        }
+
+        function goToPage(pageNum) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page' + pageNum).classList.add('active');
+        }
+
+        // --- DATA MEMORI FOTO ---
+        const photoMemories = [
+            { src: "Gambar 1.jpeg", caption: "Senyum ini yang selalu aku tunggu" },
+            { src: "Gambar 2.jpeg", caption: "Doaku hari ini dan seterusnya: semoga kamu selalu bahagia dan dijaga di sana." },
+            { src: "Gambar 3.jpeg", caption: "Setiap kali liat foto ini, aku selalu bersyukur karena udah dipertemukan sama kamu." },
+            { src: "Gambar 4.jpeg", caption: "Muka bantal kamu yang selalu sukses bikin aku kangen tiap hari." },
+            { src: "Gambar 5.jpeg", caption: "Senyum yang selalu berhasil bikin hari-hari beratku jadi ringan." },
+            { src: "Gambar 6.jpeg", caption: "Pap pertama kamu ke aku yang bikin aku jatuh cinta berkali-kali." },
+            { src: "Gambar 7.jpeg", caption: "Di mata kamu, aku selalu nemu tempat ternyaman buat pulang." },
+            { src: "Gambar 8.jpeg", caption: "Foto favorit aku! Definisi bahagia yang nggak butuh banyak syarat." },
+            { src: "Gambar 9.jpeg", caption: "Satu-satunya orang yang bisa bikin aku jatuh cinta berkali-kali lewat foto yang sama." },
+            { src: "Gambar 10.jpeg", caption: "Mau lagi manyun atau lagi ngambek, pokoknya kamu tetep nomer satu!" }
+        ];
+
+        let photosClickedCount = 0;
+
+        function initPhotos() {
+            const area = document.getElementById('photoArea');
+            area.innerHTML = '';
+            
+            photoMemories.forEach((mem, index) => {
+                let wrapper = document.createElement('div');
+                wrapper.className = 'photo-wrapper';
+                
+                let lane = index % 5; 
+                let basePosition = 8 + (lane * 17);
+                let randomJitter = Math.random() * 12 - 6; 
+                wrapper.style.left = (basePosition + randomJitter) + 'vw';
+                
+                let startDepth = Math.random() * 200 + 150; 
+                wrapper.style.bottom = `-${startDepth}px`;
+                
+                let randomDelay = Math.random() * 12; 
+                wrapper.style.animationDelay = `${randomDelay}s`;
+                
+                let floatDuration = Math.random() * 5 + 13; 
+                wrapper.style.animation = `floatPhotoUp ${floatDuration}s linear infinite`;
+                
+                let img = document.createElement('img');
+                img.src = mem.src;
+                img.className = 'floating-photo';
+                
+                let baseScale = Math.random() * 0.2 + 0.9; 
+                img.style.setProperty('--base-scale', baseScale);
+                
+                let rot = (Math.random() * 26 - 13) + 'deg';
+                img.style.setProperty('--rot', rot);
+                
+                wrapper.onclick = () => openPhotoCenter(mem.src, mem.caption);
+                
+                wrapper.appendChild(img);
+                area.appendChild(wrapper);
+            });
+        }
+
+        function openPhotoCenter(src, caption) {
+            document.getElementById('modalImage').src = src;
+            document.getElementById('photoCaption').innerText = caption;
+            document.getElementById('photoModal').classList.add('show');
+            
+            photosClickedCount++;
+            if (photosClickedCount >= 3) { 
+                const btn = document.getElementById('btnPage2');
+                btn.style.display = 'block';
+                setTimeout(() => btn.style.opacity = '1', 50);
+            }
+        }
+
+        function closePhotoModal() {
+            document.getElementById('photoModal').classList.remove('show');
+            setTimeout(() => {
+                document.getElementById('modalImage').src = '';
+                document.getElementById('photoCaption').innerText = '';
+            }, 400);
+        }
+
+        // --- KOTAK HADIAH (HALAMAN 3) ---
+        let giftClicks = 0;
+        function openGift() {
+            giftClicks++;
+            if (giftClicks <= 3) {
+                document.getElementById('prom' + giftClicks).classList.add('show');
+            }
+            if (giftClicks === 3) {
+                const btn = document.getElementById('btnPage3');
+                btn.style.display = 'block';
+                setTimeout(() => btn.style.opacity = '1', 50);
+            }
+        }
+
+        // --- LENTERA (HALAMAN 4) ---
+        function initLanterns() {
+            const area = document.getElementById('lanternArea');
+            area.innerHTML = '';
+            for (let i = 0; i < 12; i++) {
+                let lantern = document.createElement('div');
+                lantern.innerHTML = '🏮';
+                lantern.className = 'lantern';
+                lantern.style.left = Math.random() * 80 + 10 + 'vw';
+                lantern.style.animation = `floatUp ${Math.random() * 6 + 6}s linear infinite`;
+                lantern.style.animationDelay = Math.random() * 5 + 's';
+                lantern.onclick = () => document.getElementById('lanternModal').classList.add('show');
+                area.appendChild(lantern);
+            }
+        }
+
+        // --- KEMBANG API & ENDING ---
+        const canvas = document.getElementById('fwCanvas');
+        const ctx = canvas.getContext('2d');
+        let w, h;
+        let fwParticles = [];
+        let fwState = 0; 
+        let rocket = null;
+
+        function resizeCanvas() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        window.startFinalWaltz = function() {
+            document.getElementById('lanternModal').classList.remove('show');
+            starsContainer.style.display = 'none'; 
+            goToPage('Credits');
+
+            setTimeout(() => { document.getElementById('rollingText').classList.add('start-scroll'); }, 1500);
+            
+            // Diubah menjadi 32000 ms (32 detik) agar menunggu teks selesai scroll dulu
+            setTimeout(() => { mulaiKembangApi(); }, 32000); 
+        }
+
+        function mulaiKembangApi() {
+            goToPage(5);
+            fwState = 0; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+            setTimeout(() => {
+                fwState = 1; rocket = { x: w / 2, y: h, vx: 0, vy: -(h / 65), color: '#ffd700' };
+                requestAnimationFrame(fwLoop);
+            }, 1000);
+        }
+
+        function createHeartOutline(cx, cy) {
+            fwParticles = [];
+            const numPoints = 220; const scale = (Math.min(w, h) * 0.85) / 32; 
+            for (let i = 0; i < numPoints; i++) {
+                const t = (i / numPoints) * Math.PI * 2;
+                const tx = 16 * Math.pow(Math.sin(t), 3);
+                const ty = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                fwParticles.push({
+                    x: cx, y: cy, targetX: cx + tx * scale, targetY: cy + ty * scale - (scale * 5), 
+                    color: '#ff4b82', alpha: 1, size: 2.5, type: 'heart'
+                });
+            }
+        }
+
+        function fwLoop() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; ctx.fillRect(0, 0, w, h);
+
+            if (fwState === 1 && rocket) {
+                ctx.beginPath(); ctx.arc(rocket.x, rocket.y, 3, 0, Math.PI * 2);
+                ctx.fillStyle = rocket.color; ctx.fill();
+                fwParticles.push({ x: rocket.x, y: rocket.y, vx: (Math.random() - 0.5) * 2, vy: Math.random() * 2 + 1, alpha: 1, type: 'trail', color: '#ffa500' });
+                rocket.y += rocket.vy;
+                if (rocket.y <= h / 2) {
+                    fwState = 2; createHeartOutline(rocket.x, h / 2); rocket = null;
+                    setTimeout(() => { fwState = 3; }, 1000); 
+                    setTimeout(() => { fwState = 4; document.getElementById('finalMessage').style.opacity = '1'; }, 2500);
+                }
+            }
+
+            fwParticles = fwParticles.filter(p => {
+                if (p.type === 'trail' || p.type === 'spark') {
+                    p.x += p.vx; p.y += p.vy; p.alpha -= 0.02; if (p.alpha <= 0) return false; 
+                } else if (p.type === 'heart') {
+                    p.x += (p.targetX - p.x) * 0.08; p.y += (p.targetY - p.y) * 0.08;
+                    if (fwState >= 4) { p.alpha -= 0.003; if (p.alpha <= 0) return false; }
+                }
+                if (p.alpha > 0) {
+                    ctx.globalAlpha = p.alpha; ctx.beginPath(); ctx.arc(p.x, p.y, p.size || 2, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color; ctx.fill(); ctx.globalAlpha = 1;
+                }
+                return true; 
+            });
+
+            if (fwState === 4 && Math.random() < 0.07) { spawnRandomFirework(); }
+            requestAnimationFrame(fwLoop);
+        }
+
+        function spawnRandomFirework() {
+            const fx = Math.random() * w; const fy = Math.random() * (h * 0.45); 
+            const color = `hsl(${Math.random() * 360}, 100%, 70%)`; 
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 2.5 + 0.5;
+                fwParticles.push({ x: fx, y: fy, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, alpha: 1, type: 'spark', color: color, size: Math.random() * 1.5 + 1 });
+            }
+        }
+    </script>
+</body>
+</html>
